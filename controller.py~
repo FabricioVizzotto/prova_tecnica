@@ -1,0 +1,57 @@
+import os
+import re
+from models import Seller, Client, Sells
+from file_view import reads_input_data, write_output_data
+
+# constantes
+VENDEDOR = '001'
+COMPRADOR = '002'
+VENDAS = '003'
+SEPARADOR = 'ç'
+
+
+# indexação
+input_type_to_object_dict  = {
+    VENDEDOR:Seller,
+    COMPRADOR:Client,
+    VENDAS:Sells
+}
+
+object_array_dict = {
+    VENDEDOR:[],
+    COMPRADOR:[],
+    VENDAS:[]
+}
+
+def create_objects_from_input(input_data):
+    for i in input_data:
+        aux_list = i.split(SEPARADOR)
+        object_array_dict[aux_list[0]].append(
+            input_type_to_object_dict[aux_list[0]](*aux_list[1:])
+        )
+
+def file_finder():
+    home = os.path.expanduser('~')
+    base_path_in = home+'/data/in/'
+    files = set()
+    for root, dirs, entries in os.walk(base_path_in):
+        for entry in entries:
+            if re.search('^.*\.dat$', entry):
+                files.add(base_path_in+entry)
+    return files
+
+def analyse_data(files):
+    input_data = set()
+    for file_name in files:
+        input_data.update(reads_input_data(file_name))
+    create_objects_from_input(input_data)
+    sorted_sells_list = sorted(object_array_dict[VENDAS],key=lambda sell: sell.calculate_sell_value())
+    # output
+    fmt = "Clientes: {}, vendedores: {}, ID da venda mais cara: , pior vendedor: "
+    output_data = fmt.format(
+        len(object_array_dict[COMPRADOR]),
+        len(object_array_dict[VENDEDOR]),
+        sorted_sells_list[len(sorted_sells_list)-1].sell_id,
+        sorted_sells_list[0].seller_name
+    )
+    write_output_data("sells_of_the_month", output_data)
